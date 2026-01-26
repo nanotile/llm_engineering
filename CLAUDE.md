@@ -4,71 +4,74 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the LLM Engineering course repository - an 8-week educational curriculum for learning AI and LLM development. The course progresses from basic LLM interactions to building autonomous agentic AI solutions.
+LLM Engineering course repository - an 8-week curriculum progressing from basic LLM interactions to autonomous agentic AI solutions.
 
-## Development Environment
+## Development Commands
 
-**Package Manager**: uv (not pip or conda)
-- Install packages: `uv add <package>`
-- Run scripts: `uv run python <script.py>`
-- Sync dependencies: `uv sync`
+**All commands run from `llm_engineering/` directory:**
 
-**Python Version**: 3.12 (specified in `.python-version`)
-
-**Environment Variables**: Store API keys in `.env` file in `llm_engineering/` directory:
-```
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=...
-```
-
-## Running Code
-
-Run Jupyter notebooks in Cursor/VS Code with the `.venv` kernel selected.
-
-Run Python scripts:
 ```bash
-cd llm_engineering
+# Run Python scripts
 uv run python week8/deal_agent_framework.py
+
+# Add dependencies
+uv add <package>
+
+# Sync environment
+uv sync
+
+# Run Gradio apps (week5)
+uv run python week5/app.py        # RAG chatbot
+uv run python week5/evaluator.py  # Evaluation dashboard
+
+# Run Modal deployments (week7) - requires `modal setup` first
+uv run modal deploy week8/pricer_service.py
 ```
 
-Run Gradio apps:
-```bash
-cd llm_engineering/week5
-uv run python app.py        # RAG chatbot
-uv run python evaluator.py  # Evaluation dashboard
+**Jupyter notebooks**: Use `.venv` kernel in Cursor/VS Code.
+
+**Environment**: Python 3.12, API keys in `llm_engineering/.env`
+
+## Architecture: Week 8 Agent Framework
+
+The deal discovery system uses a multi-agent pipeline orchestrated by `DealAgentFramework`:
+
+```
+DealAgentFramework.run()
+    └── PlanningAgent.plan()
+            ├── ScannerAgent.scan()      # Scrapes RSS feeds for deals
+            ├── EnsembleAgent.price()    # Estimates product value
+            │       ├── FrontierAgent    # GPT/Claude price estimation
+            │       └── NeuralNetworkAgent # ML model estimation
+            └── MessagingAgent.alert()   # Sends notifications
 ```
 
-## Repository Structure
+- `agents/deals.py` - Data models (ScrapedDeal, Deal, Opportunity)
+- `agents/scanner_agent.py` - RSS feed parsing with LLM extraction
+- `agents/frontier_agent.py` - Uses GPT-4 for price estimation
+- `agents/ensemble_agent.py` - Combines multiple estimation strategies
+- `memory.json` - Persists discovered opportunities across runs
 
-- `llm_engineering/` - Main course content
-  - `week1-week8/` - Progressive course modules with daily notebooks (`day1.ipynb`, etc.)
-  - `guides/` - Foundational guides (Python, notebooks, APIs, debugging)
-  - `setup/` - Platform-specific setup instructions
-  - `community-contributions/` - Student projects and solutions
+## Architecture: Week 5 RAG System
 
-## Course Architecture by Week
+```
+knowledge-base/ → ingest.py → ChromaDB vectorstore
+                                    ↓
+                              answer.py ← user query
+                                    ↓
+                              app.py (Gradio UI)
+```
 
-- **Week 1-2**: LLM API fundamentals (OpenAI, Anthropic), prompting, web scraping
-- **Week 3**: Google Colab, GPU computing, transformers
-- **Week 4**: Code generation and analysis tools
-- **Week 5**: RAG systems with ChromaDB and LangChain
-  - `implementation/` - RAG answer generation
-  - `evaluation/` - Retrieval/answer quality metrics
-- **Week 6**: Fine-tuning LLMs, JSONL data formats
-- **Week 7**: Model training on Modal cloud platform
-- **Week 8**: Agentic AI framework
-  - `agents/` - Modular agent architecture (planning, scanning, frontier, ensemble agents)
-  - `deal_agent_framework.py` - Orchestrates multi-agent product deal discovery
+- `evaluation/eval.py` - Runs retrieval and answer quality tests against `tests.jsonl`
 
-## Key Dependencies
+## Key Files by Module
 
-- **LLM APIs**: openai, anthropic, google-generativeai, ollama
-- **LangChain ecosystem**: langchain, langchain-openai, langchain-chroma
-- **ML/Data**: torch, transformers, scikit-learn, pandas, numpy
-- **Vector DB**: chromadb
-- **UI**: gradio
-- **Cloud**: modal
+| Week | Key Entry Points |
+|------|------------------|
+| 5 | `app.py`, `evaluator.py`, `implementation/ingest.py`, `implementation/answer.py` |
+| 7 | `pricer/` for Modal training, `util.py` for data prep |
+| 8 | `deal_agent_framework.py`, `agents/planning_agent.py` |
 
 ## Free API Alternatives
 
-See `guides/09_ai_apis_and_ollama.ipynb` for using Ollama, Gemini, and OpenRouter as free alternatives to paid APIs.
+See `guides/09_ai_apis_and_ollama.ipynb` for Ollama, Gemini, and OpenRouter as free alternatives to paid APIs.
